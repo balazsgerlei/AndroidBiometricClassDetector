@@ -176,7 +176,7 @@ fun BiometricClassDisplayScreenPreview() {
         BiometricClassDisplayScreen(
             state = BiometricProperties(
                 isDeviceSecure = true,
-                availableBiometricTypes = listOf(BiometricType.FINGERPRINT, BiometricType.CAMERA),
+                availableBiometricTypes = listOf(BiometricType.FINGERPRINT, BiometricType.FACE),
                 availableBiometricClasses = listOf(
                     BiometricClassDetails(
                         biometricClass = BiometricClass.CLASS3,

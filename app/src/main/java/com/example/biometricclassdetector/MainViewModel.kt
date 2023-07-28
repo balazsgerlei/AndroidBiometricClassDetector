@@ -23,7 +23,7 @@ class MainViewModel: ViewModel() {
         val availableBiometricClasses = ArrayList<BiometricClassDetails>()
 
         if (packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)) {
-            availableBiometricTypes.add(BiometricType.CAMERA)
+            availableBiometricTypes.add(BiometricType.FACE)
         }
         if (packageManager.hasSystemFeature(PackageManager.FEATURE_IRIS)) {
             availableBiometricTypes.add(BiometricType.IRIS)
