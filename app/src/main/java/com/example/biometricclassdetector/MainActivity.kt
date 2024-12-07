@@ -9,6 +9,7 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -31,10 +32,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             BiometricClassDetectorTheme {
+                val deviceInfoState = viewModel.deviceInfo.observeAsState()
                 val biometricPropertiesState = viewModel.biometricProperties.observeAsState()
 
                 BiometricClassDisplayScreen(
-                    state = biometricPropertiesState.value,
+                    deviceInfoState = deviceInfoState.value,
+                    biometricPropertiesState = biometricPropertiesState.value,
                     onShowBiometricPromptClick = {
                         showBiometricPrompt()
                     },
@@ -46,6 +49,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        viewModel.retrieveDeviceInfo()
         viewModel.retrieveBiometricProperties(this)
     }
 
@@ -86,34 +90,85 @@ class MainActivity : AppCompatActivity() {
 }
 
 @Composable
-fun BiometricClassDisplayScreen(state: BiometricProperties?,
-                                onShowBiometricPromptClick: () -> Unit,
-                                modifier: Modifier = Modifier
+fun BiometricClassDisplayScreen(
+    deviceInfoState: DeviceInfo?,
+    biometricPropertiesState: BiometricProperties?,
+    onShowBiometricPromptClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
         color = MaterialTheme.colorScheme.background
     ) {
-        state?.let {
-            Column(
-                modifier = modifier.padding(16.dp)
+        Column(
+            modifier = modifier,
+        ) {
+            DeviceInfoDisplay(
+                state = deviceInfoState,
+            )
+            BiometricClassDisplay(
+                state = biometricPropertiesState,
+                onShowBiometricPromptClick = onShowBiometricPromptClick,
+                modifier = modifier.fillMaxSize(),
+            )
+        }
+    }
+}
+
+@Composable
+fun DeviceInfoDisplay(
+    state: DeviceInfo?,
+    modifier: Modifier = Modifier
+) {
+    if (state != null) {
+        Column (
+            modifier = modifier
+                .padding(start = 8.dp, top = 16.dp, end = 8.dp, bottom = 8.dp)
+                .fillMaxWidth(),
+        ) {
+            Text(
+                text = "${state.deviceBrand} ${state.deviceName} (${state.deviceModel})",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .fillMaxWidth(),
+            )
+            Text(
+                text = "Android ${state.androidVersion} (API ${state.androidApiLevel})",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier
+                    .padding(vertical = 4.dp, horizontal = 8.dp)
+                    .fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+fun BiometricClassDisplay(
+    state: BiometricProperties?,
+    onShowBiometricPromptClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (state != null) {
+        Column(
+            modifier = modifier.padding(16.dp)
+        ) {
+            DeviceSecureDisplay(
+                isDeviceSecure = state.isDeviceSecure,
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+            BiometricTypesDisplay(
+                biometricTypes = state.availableBiometricTypes.joinToString(separator = ", "),
+                modifier = Modifier.padding(bottom = 16.dp),
+            )
+            BiometricClassesDisplay(
+                biometricClasses = state.availableBiometricClasses,
+            )
+            Button(
+                onClick = onShowBiometricPromptClick,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 24.dp)
             ) {
-                DeviceSecureDisplay(
-                    isDeviceSecure = state.isDeviceSecure,
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-                BiometricTypesDisplay(
-                    biometricTypes = state.availableBiometricTypes.joinToString(separator = ", "),
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-                BiometricClassesDisplay(
-                    biometricClasses = state.availableBiometricClasses,
-                )
-                Button(
-                    onClick = onShowBiometricPromptClick,
-                    modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 24.dp)
-                ) {
-                    Text("Show Biometric Prompt")
-                }
+                Text("Show Biometric Prompt")
             }
         }
     }
@@ -156,10 +211,30 @@ fun BiometricClassesDisplay(biometricClasses: List<BiometricClassDetails>, modif
 
 @Preview(showBackground = true)
 @Composable
+fun DeviceInfoDisplayPreview() {
+    BiometricClassDetectorTheme {
+        DeviceInfoDisplay(
+            state = DeviceInfo(
+                deviceName = "Pixel 8 Pro",
+                deviceBrand = "Google",
+                deviceModel = "husky",
+                androidVersion = "14",
+                androidApiLevel = 34,
+            ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
 fun BiometricClassesDisplayPreview() {
     BiometricClassDetectorTheme {
         BiometricClassesDisplay(
             biometricClasses = listOf(
+                BiometricClassDetails(
+                    biometricClass = BiometricClass.CLASS2,
+                    enrolled = true,
+                ),
                 BiometricClassDetails(
                     biometricClass = BiometricClass.CLASS3,
                     enrolled = true,
@@ -174,10 +249,21 @@ fun BiometricClassesDisplayPreview() {
 fun BiometricClassDisplayScreenPreview() {
     BiometricClassDetectorTheme {
         BiometricClassDisplayScreen(
-            state = BiometricProperties(
+            deviceInfoState = DeviceInfo(
+                deviceName = "Pixel 8 Pro",
+                deviceBrand = "Google",
+                deviceModel = "husky",
+                androidVersion = "14",
+                androidApiLevel = 34,
+            ),
+            biometricPropertiesState = BiometricProperties(
                 isDeviceSecure = true,
                 availableBiometricTypes = listOf(BiometricType.FINGERPRINT, BiometricType.FACE),
                 availableBiometricClasses = listOf(
+                    BiometricClassDetails(
+                        biometricClass = BiometricClass.CLASS2,
+                        enrolled = true,
+                    ),
                     BiometricClassDetails(
                         biometricClass = BiometricClass.CLASS3,
                         enrolled = true

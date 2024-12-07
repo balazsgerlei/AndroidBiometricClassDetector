@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Context.KEYGUARD_SERVICE
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.biometric.BiometricManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -11,8 +12,21 @@ import androidx.lifecycle.ViewModel
 
 class MainViewModel: ViewModel() {
 
+    private val _deviceInfo = MutableLiveData<DeviceInfo>()
+    val deviceInfo: LiveData<DeviceInfo> = _deviceInfo
+
     private val _biometricProperties = MutableLiveData<BiometricProperties>()
     val biometricProperties: LiveData<BiometricProperties> = _biometricProperties
+
+    fun retrieveDeviceInfo() {
+        _deviceInfo.value = DeviceInfo(
+            deviceName = Build.MODEL,
+            deviceBrand = Build.MANUFACTURER,
+            deviceModel = Build.DEVICE,
+            androidVersion = Build.VERSION.RELEASE,
+            androidApiLevel = Build.VERSION.SDK_INT,
+        )
+    }
 
     fun retrieveBiometricProperties(context: Context) {
         val packageManager = context.packageManager
