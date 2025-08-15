@@ -3,6 +3,7 @@ package com.example.biometricclassdetector
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Context.KEYGUARD_SERVICE
+import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.biometric.BiometricManager
@@ -42,6 +43,12 @@ class MainViewModel: ViewModel() {
         if (packageManager.hasSystemFeature(PackageManager.FEATURE_IRIS)) {
             availableBiometricTypes.add(BiometricType.IRIS)
         }
+        try {
+            val samsungIrisInfo: PackageInfo? = packageManager.getPackageInfo("com.samsung.android.server.iris", PackageManager.GET_META_DATA)
+            if (samsungIrisInfo != null) {
+                availableBiometricTypes.add(BiometricType.IRIS)
+            }
+        } catch (_: Exception) {}
         if (packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)) {
             availableBiometricTypes.add(BiometricType.FINGERPRINT)
         }
