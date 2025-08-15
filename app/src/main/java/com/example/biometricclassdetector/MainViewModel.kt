@@ -6,6 +6,7 @@ import android.content.Context.KEYGUARD_SERVICE
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.biometric.BiometricManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -37,19 +38,13 @@ class MainViewModel: ViewModel() {
         val availableBiometricTypes = ArrayList<BiometricType>()
         val availableBiometricClasses = ArrayList<BiometricClassDetails>()
 
-        if (packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && faceSensorAvailable(packageManager)) {
             availableBiometricTypes.add(BiometricType.FACE)
         }
-        if (packageManager.hasSystemFeature(PackageManager.FEATURE_IRIS)) {
+        if (irisSensorAvailable(packageManager)) {
             availableBiometricTypes.add(BiometricType.IRIS)
         }
-        try {
-            val samsungIrisInfo: PackageInfo? = packageManager.getPackageInfo("com.samsung.android.server.iris", PackageManager.GET_META_DATA)
-            if (samsungIrisInfo != null) {
-                availableBiometricTypes.add(BiometricType.IRIS)
-            }
-        } catch (_: Exception) {}
-        if (packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)) {
+        if (fingerprintSensorAvailable(packageManager)) {
             availableBiometricTypes.add(BiometricType.FINGERPRINT)
         }
 
@@ -78,5 +73,23 @@ class MainViewModel: ViewModel() {
 
         _biometricProperties.value = BiometricProperties(keyGuardManager.isDeviceSecure, availableBiometricTypes, availableBiometricClasses)
     }
+
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private fun faceSensorAvailable(packageManager: PackageManager): Boolean = packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)
+
+    private fun irisSensorAvailable(packageManager: PackageManager): Boolean {
+        if (packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)) {
+            return true
+        } else {
+            try {
+                val samsungIrisInfo: PackageInfo? = packageManager.getPackageInfo("com.samsung.android.server.iris", PackageManager.GET_META_DATA)
+                return samsungIrisInfo != null
+            } catch (_: Exception) {
+                return false
+            }
+        }
+    }
+
+    private fun fingerprintSensorAvailable(packageManager: PackageManager): Boolean = packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
 
 }
