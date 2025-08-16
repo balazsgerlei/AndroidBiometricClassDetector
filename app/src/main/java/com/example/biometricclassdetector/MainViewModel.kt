@@ -11,24 +11,24 @@ import androidx.biometric.BiometricManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class MainViewModel: ViewModel() {
 
-    private val _deviceInfo = MutableLiveData<DeviceInfo>()
-    val deviceInfo: LiveData<DeviceInfo> = _deviceInfo
-
-    private val _biometricProperties = MutableLiveData<BiometricProperties>()
-    val biometricProperties: LiveData<BiometricProperties> = _biometricProperties
-
-    fun retrieveDeviceInfo() {
-        _deviceInfo.value = DeviceInfo(
-            deviceName = Build.MODEL,
-            deviceBrand = Build.MANUFACTURER,
-            deviceModel = Build.DEVICE,
-            androidVersion = Build.VERSION.RELEASE,
+    private val _deviceInfo = MutableStateFlow(
+        DeviceInfo(
+            deviceName = Build.MODEL ?: "Unknown",
+            deviceBrand = Build.MANUFACTURER ?: "Unknown",
+            deviceModel = Build.DEVICE ?: "Unknown",
+            androidVersion = Build.VERSION.RELEASE ?: "Unknown",
             androidApiLevel = Build.VERSION.SDK_INT,
         )
-    }
+    )
+    val deviceInfo = _deviceInfo.asStateFlow()
+
+    private val _biometricProperties = MutableStateFlow<BiometricProperties?>(null)
+    val biometricProperties = _biometricProperties.asStateFlow()
 
     fun retrieveBiometricProperties(context: Context) {
         val packageManager = context.packageManager
