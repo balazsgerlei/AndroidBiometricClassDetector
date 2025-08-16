@@ -11,10 +11,21 @@ import androidx.biometric.BiometricManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
 
 class MainViewModel: ViewModel() {
+
+    sealed class UiEvent {
+        data object ShowBiometricPrompt: UiEvent()
+    }
+
+    private val _eventChannel = Channel<UiEvent>(Channel.BUFFERED)
+    val eventChannel = _eventChannel.receiveAsFlow()
 
     private val _deviceInfo = MutableStateFlow(
         DeviceInfo(
@@ -29,6 +40,10 @@ class MainViewModel: ViewModel() {
 
     private val _biometricProperties = MutableStateFlow<BiometricProperties?>(null)
     val biometricProperties = _biometricProperties.asStateFlow()
+
+    fun showBiometricPrompt() = viewModelScope.launch {
+        _eventChannel.send(UiEvent.ShowBiometricPrompt)
+    }
 
     fun retrieveBiometricProperties(context: Context) {
         val packageManager = context.packageManager
