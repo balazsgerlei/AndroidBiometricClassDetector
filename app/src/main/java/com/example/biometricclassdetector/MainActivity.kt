@@ -16,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,12 +34,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             BiometricClassDetectorTheme {
-                val deviceInfoState = viewModel.deviceInfo.observeAsState()
-                val biometricPropertiesState = viewModel.biometricProperties.observeAsState()
+                val deviceInfoState by viewModel.deviceInfo.collectAsState()
+                val biometricPropertiesState by viewModel.biometricProperties.collectAsState()
 
                 BiometricClassDisplayScreen(
-                    deviceInfoState = deviceInfoState.value,
-                    biometricPropertiesState = biometricPropertiesState.value,
+                    deviceInfoState = deviceInfoState,
+                    biometricPropertiesState = biometricPropertiesState,
                     onShowBiometricPromptClick = {
                         showBiometricPrompt()
                     },
@@ -49,7 +51,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.retrieveDeviceInfo()
         viewModel.retrieveBiometricProperties(this)
     }
 
@@ -102,7 +103,7 @@ class MainActivity : AppCompatActivity() {
 
 @Composable
 fun BiometricClassDisplayScreen(
-    deviceInfoState: DeviceInfo?,
+    deviceInfoState: DeviceInfo,
     biometricPropertiesState: BiometricProperties?,
     onShowBiometricPromptClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -127,30 +128,28 @@ fun BiometricClassDisplayScreen(
 
 @Composable
 fun DeviceInfoDisplay(
-    state: DeviceInfo?,
+    state: DeviceInfo,
     modifier: Modifier = Modifier
 ) {
-    if (state != null) {
-        Column (
-            modifier = modifier
-                .padding(start = 8.dp, top = 16.dp, end = 8.dp, bottom = 8.dp)
+    Column (
+        modifier = modifier
+            .padding(start = 8.dp, top = 16.dp, end = 8.dp, bottom = 8.dp)
+            .fillMaxWidth(),
+    ) {
+        Text(
+            text = "${state.deviceBrand} ${state.deviceName} (${state.deviceModel})",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
+                .padding(vertical = 4.dp, horizontal = 8.dp)
                 .fillMaxWidth(),
-        ) {
-            Text(
-                text = "${state.deviceBrand} ${state.deviceName} (${state.deviceModel})",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
-                    .fillMaxWidth(),
-            )
-            Text(
-                text = "Android ${state.androidVersion} (API ${state.androidApiLevel})",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier
-                    .padding(vertical = 4.dp, horizontal = 8.dp)
-                    .fillMaxWidth(),
-            )
-        }
+        )
+        Text(
+            text = "Android ${state.androidVersion} (API ${state.androidApiLevel})",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier
+                .padding(vertical = 4.dp, horizontal = 8.dp)
+                .fillMaxWidth(),
+        )
     }
 }
 
