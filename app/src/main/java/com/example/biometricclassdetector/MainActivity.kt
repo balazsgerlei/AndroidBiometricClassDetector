@@ -53,37 +53,48 @@ class MainActivity : AppCompatActivity() {
         viewModel.retrieveBiometricProperties(this)
     }
 
-    private fun showBiometricPrompt() {
-        val biometricPrompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this),
-            object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationError(errorCode: Int,
-                                                   errString: CharSequence) {
-                    super.onAuthenticationError(errorCode, errString)
-                    Toast.makeText(this@MainActivity,
-                        "Authentication error: $errString", Toast.LENGTH_SHORT)
-                        .show()
-                }
+    private fun createBiometricPrompt(): BiometricPrompt {
+        val authenticationCallback = object : BiometricPrompt.AuthenticationCallback() {
+            override fun onAuthenticationError(errorCode: Int,
+                                               errString: CharSequence) {
+                super.onAuthenticationError(errorCode, errString)
+                Toast.makeText(this@MainActivity,
+                    "Authentication error: $errString", Toast.LENGTH_SHORT)
+                    .show()
+            }
 
-                override fun onAuthenticationSucceeded(
-                    result: BiometricPrompt.AuthenticationResult) {
-                    super.onAuthenticationSucceeded(result)
-                    Toast.makeText(this@MainActivity,
-                        "Authentication succeeded!", Toast.LENGTH_SHORT)
-                        .show()
-                }
+            override fun onAuthenticationSucceeded(
+                result: BiometricPrompt.AuthenticationResult) {
+                super.onAuthenticationSucceeded(result)
+                Toast.makeText(this@MainActivity,
+                    "Authentication succeeded!", Toast.LENGTH_SHORT)
+                    .show()
+            }
 
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    Toast.makeText(this@MainActivity, "Authentication failed",
-                        Toast.LENGTH_SHORT)
-                        .show()
-                }
-            })
-        val promptInfo = BiometricPrompt.PromptInfo.Builder().setTitle("Biometric login for my app")
+            override fun onAuthenticationFailed() {
+                super.onAuthenticationFailed()
+                Toast.makeText(this@MainActivity, "Authentication failed",
+                    Toast.LENGTH_SHORT)
+                    .show()
+            }
+        }
+        return BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            authenticationCallback
+        )
+    }
+
+    private fun createPromptInfo() = BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Biometric login for my app")
             .setSubtitle("Log in using your biometric credential")
             .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
             .setNegativeButtonText("Cancel")
             .build()
+
+    private fun showBiometricPrompt() {
+        val biometricPrompt = createBiometricPrompt()
+        val promptInfo = createPromptInfo()
         biometricPrompt.authenticate(promptInfo)
     }
 
@@ -166,7 +177,9 @@ fun BiometricClassDisplay(
             )
             Button(
                 onClick = onShowBiometricPromptClick,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 24.dp)
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(top = 24.dp)
             ) {
                 Text("Show Biometric Prompt")
             }
