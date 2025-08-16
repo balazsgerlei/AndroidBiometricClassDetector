@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -37,11 +38,19 @@ class MainActivity : AppCompatActivity() {
                 val deviceInfoState by viewModel.deviceInfo.collectAsState()
                 val biometricPropertiesState by viewModel.biometricProperties.collectAsState()
 
+                LaunchedEffect(Unit) {
+                    viewModel.eventChannel.collect { event ->
+                        if (event is MainViewModel.UiEvent.ShowBiometricPrompt) {
+                            showBiometricPrompt()
+                        }
+                    }
+                }
+
                 BiometricClassDisplayScreen(
                     deviceInfoState = deviceInfoState,
                     biometricPropertiesState = biometricPropertiesState,
                     onShowBiometricPromptClick = {
-                        showBiometricPrompt()
+                        viewModel.showBiometricPrompt()
                     },
                     modifier = Modifier.fillMaxSize()
                 )
