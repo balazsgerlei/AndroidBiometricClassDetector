@@ -6,10 +6,12 @@ import android.content.Context.KEYGUARD_SERVICE
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
+import android.security.keystore.KeyProperties
 import androidx.annotation.RequiresApi
 import androidx.biometric.BiometricManager
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.biometric.BiometricPrompt
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
@@ -17,11 +19,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
+import java.security.KeyStore
+import java.security.KeyStoreException
+import java.security.NoSuchAlgorithmException
+import java.security.UnrecoverableKeyException
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.NoSuchPaddingException
+
+private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+private const val SAMPLE_AES_KEY_ALIAS = "sample_aes_key"
 
 class MainViewModel: ViewModel() {
 
     sealed class UiEvent {
         data object ShowBiometricPrompt: UiEvent()
+        data class ShowSecureBiometricPrompt(
+            val cryptoObject: BiometricPrompt.CryptoObject
+        ): UiEvent()
+        data object FailedToShowBiometricPrompt: UiEvent()
+        data class AuthenticationError(
+            val errorCode: Int,
+            val errorString: CharSequence
+        ): UiEvent()
+        data object AuthenticationSucceeded: UiEvent()
+        data object AuthenticationFailed: UiEvent()
     }
 
     private val _eventChannel = Channel<UiEvent>(Channel.BUFFERED)
@@ -41,8 +63,65 @@ class MainViewModel: ViewModel() {
     private val _biometricProperties = MutableStateFlow<BiometricProperties?>(null)
     val biometricProperties = _biometricProperties.asStateFlow()
 
+    private var cryptoObject: BiometricPrompt.CryptoObject? = null
+
+    private var keystore: KeyStore? = null
+
+    init {
+        keystore = KeyStore.getInstance(ANDROID_KEYSTORE).apply {
+            load(null)
+        }
+    }
+
     fun showBiometricPrompt() = viewModelScope.launch {
+        cryptoObject = null
         _eventChannel.send(UiEvent.ShowBiometricPrompt)
+    }
+
+    fun showSecureBiometricPrompt() {
+        generateKey()
+        val cipher = createCipher()
+        if (cipher != null && initCipher(cipher)) {
+            BiometricPrompt.CryptoObject(cipher).let {
+                cryptoObject = it
+                viewModelScope.launch {
+                    _eventChannel.send(
+                        UiEvent.ShowSecureBiometricPrompt(cryptoObject = it)
+                    )
+                }
+            }
+        } else {
+            viewModelScope.launch {
+                _eventChannel.send(UiEvent.FailedToShowBiometricPrompt)
+            }
+        }
+    }
+
+    fun onAuthenticationError(errorCode: Int, errorString: CharSequence) = viewModelScope.launch {
+        _eventChannel.send(UiEvent.AuthenticationError(errorCode, errorString))
+    }
+
+    fun onAuthenticationSucceeded(cryptoObjectFromResult: BiometricPrompt.CryptoObject? = null) {
+        if (cryptoObject != null) {
+            if (cryptoObjectFromResult?.cipher == cryptoObject?.cipher) {
+                cryptoObject = null
+                viewModelScope.launch {
+                    _eventChannel.send(UiEvent.AuthenticationSucceeded)
+                }
+            } else {
+                viewModelScope.launch {
+                    _eventChannel.send(UiEvent.AuthenticationFailed)
+                }
+            }
+        } else {
+            viewModelScope.launch {
+                _eventChannel.send(UiEvent.AuthenticationSucceeded)
+            }
+        }
+    }
+
+    fun onAuthenticationFailed() = viewModelScope.launch {
+        _eventChannel.send(UiEvent.AuthenticationFailed)
     }
 
     fun retrieveBiometricProperties(context: Context) {
@@ -105,6 +184,52 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    private fun fingerprintSensorAvailable(packageManager: PackageManager): Boolean = packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
+    private fun fingerprintSensorAvailable(packageManager: PackageManager): Boolean =
+        packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
+
+    private fun createKeyGenParameterSpec() = KeyGenParameterSpec.Builder(
+        SAMPLE_AES_KEY_ALIAS,
+        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT)
+        .setBlockModes(KeyProperties.BLOCK_MODE_CBC)
+        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_PKCS7)
+        .setUserAuthenticationRequired(false)
+        .build()
+
+    private fun generateKey() =
+        KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE).run {
+            val keyGenParameterSpec = createKeyGenParameterSpec()
+            init(keyGenParameterSpec)
+            generateKey()
+        }
+
+    private fun createCipher(): Cipher? {
+        try {
+            return Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
+                    + KeyProperties.BLOCK_MODE_CBC + "/"
+                    + KeyProperties.ENCRYPTION_PADDING_PKCS7)
+        } catch (ex: NoSuchAlgorithmException) {
+            throw RuntimeException("Failed to create Cipher", ex)
+        } catch (ex: NoSuchPaddingException) {
+            throw RuntimeException("Failed to create Cipher", ex)
+        }
+    }
+
+    private fun initCipher(cipher: Cipher): Boolean {
+        try {
+            val secretKey = keystore?.getKey(SAMPLE_AES_KEY_ALIAS, null) ?: return false
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey)
+            return true
+        } catch (_: KeyPermanentlyInvalidatedException) {
+            return false
+        } catch (ex: KeyStoreException) {
+            throw RuntimeException("Failed to create Cipher", ex)
+        } catch (ex: UnrecoverableKeyException) {
+            throw RuntimeException("Failed to create Cipher", ex)
+        } catch (ex: NoSuchAlgorithmException) {
+            throw RuntimeException("Failed to create Cipher", ex)
+        } catch (ex: Exception) {
+            throw RuntimeException("Failed to create Cipher", ex)
+        }
+    }
 
 }

@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,11 +16,14 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,17 +44,56 @@ class MainActivity : AppCompatActivity() {
 
                 LaunchedEffect(Unit) {
                     viewModel.eventChannel.collect { event ->
-                        if (event is MainViewModel.UiEvent.ShowBiometricPrompt) {
-                            showBiometricPrompt()
+                        when(event) {
+                            is MainViewModel.UiEvent.ShowBiometricPrompt -> {
+                                showBiometricPrompt()
+                            }
+                            is MainViewModel.UiEvent.ShowSecureBiometricPrompt -> {
+                                showSecureBiometricPrompt(event.cryptoObject)
+                            }
+                            is MainViewModel.UiEvent.FailedToShowBiometricPrompt -> {
+                                Toast.makeText(this@MainActivity,
+                                    "Could not show the Biometric Prompt",
+                                    Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                            is MainViewModel.UiEvent.AuthenticationError -> {
+                                Toast.makeText(this@MainActivity,
+                                    "Authentication error: ${event.errorString}",
+                                    Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                            is MainViewModel.UiEvent.AuthenticationSucceeded -> {
+                                Toast.makeText(this@MainActivity,
+                                    "Authentication succeeded!",
+                                    Toast.LENGTH_SHORT)
+                                    .show()
+                            }
+                            is MainViewModel.UiEvent.AuthenticationFailed -> {
+                                Toast.makeText(this@MainActivity,
+                                    "Authentication failed",
+                                    Toast.LENGTH_SHORT)
+                                    .show()
+                            }
                         }
                     }
                 }
 
+                var useCryptoObjectChecked by remember { mutableStateOf(false) }
+
                 BiometricClassDisplayScreen(
                     deviceInfoState = deviceInfoState,
                     biometricPropertiesState = biometricPropertiesState,
+                    useCryptoObjectChecked = useCryptoObjectChecked,
+                    onUseCryptoObjectCheckedChange = {
+                        useCryptoObjectChecked = it
+                    },
                     onShowBiometricPromptClick = {
-                        viewModel.showBiometricPrompt()
+                        if (useCryptoObjectChecked) {
+                            viewModel.showSecureBiometricPrompt()
+                        } else {
+                            viewModel.showBiometricPrompt()
+                        }
                     },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -68,24 +111,18 @@ class MainActivity : AppCompatActivity() {
             override fun onAuthenticationError(errorCode: Int,
                                                errString: CharSequence) {
                 super.onAuthenticationError(errorCode, errString)
-                Toast.makeText(this@MainActivity,
-                    "Authentication error: $errString", Toast.LENGTH_SHORT)
-                    .show()
+                viewModel.onAuthenticationError(errorCode, errString)
             }
 
             override fun onAuthenticationSucceeded(
                 result: BiometricPrompt.AuthenticationResult) {
                 super.onAuthenticationSucceeded(result)
-                Toast.makeText(this@MainActivity,
-                    "Authentication succeeded!", Toast.LENGTH_SHORT)
-                    .show()
+                viewModel.onAuthenticationSucceeded(result.cryptoObject)
             }
 
             override fun onAuthenticationFailed() {
                 super.onAuthenticationFailed()
-                Toast.makeText(this@MainActivity, "Authentication failed",
-                    Toast.LENGTH_SHORT)
-                    .show()
+                viewModel.onAuthenticationFailed()
             }
         }
         return BiometricPrompt(
@@ -95,17 +132,25 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun createPromptInfo() = BiometricPrompt.PromptInfo.Builder()
+    private fun createPromptInfo(allowedAuthenticators: Int) = BiometricPrompt.PromptInfo.Builder()
             .setTitle("Biometric login for my app")
             .setSubtitle("Log in using your biometric credential")
-            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .setAllowedAuthenticators(allowedAuthenticators)
             .setNegativeButtonText("Cancel")
             .build()
 
     private fun showBiometricPrompt() {
         val biometricPrompt = createBiometricPrompt()
-        val promptInfo = createPromptInfo()
+        val promptInfo =
+            createPromptInfo(BiometricManager.Authenticators.BIOMETRIC_STRONG
+                    or BiometricManager.Authenticators.BIOMETRIC_WEAK)
         biometricPrompt.authenticate(promptInfo)
+    }
+
+    private fun showSecureBiometricPrompt(cryptoObject: BiometricPrompt.CryptoObject) {
+        val biometricPrompt = createBiometricPrompt()
+        val promptInfo = createPromptInfo(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        biometricPrompt.authenticate(promptInfo, cryptoObject)
     }
 
 }
@@ -114,6 +159,8 @@ class MainActivity : AppCompatActivity() {
 fun BiometricClassDisplayScreen(
     deviceInfoState: DeviceInfo,
     biometricPropertiesState: BiometricProperties?,
+    useCryptoObjectChecked: Boolean,
+    onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
     onShowBiometricPromptClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -128,6 +175,8 @@ fun BiometricClassDisplayScreen(
             )
             BiometricClassDisplay(
                 state = biometricPropertiesState,
+                useCryptoObjectChecked = useCryptoObjectChecked,
+                onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
                 onShowBiometricPromptClick = onShowBiometricPromptClick,
                 modifier = modifier.fillMaxSize(),
             )
@@ -165,6 +214,8 @@ fun DeviceInfoDisplay(
 @Composable
 fun BiometricClassDisplay(
     state: BiometricProperties?,
+    useCryptoObjectChecked: Boolean,
+    onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
     onShowBiometricPromptClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -183,11 +234,28 @@ fun BiometricClassDisplay(
             BiometricClassesDisplay(
                 biometricClasses = state.availableBiometricClasses,
             )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+                Switch(
+                    checked = useCryptoObjectChecked,
+                    onCheckedChange = onUseCryptoObjectCheckedChange,
+                )
+                Text(
+                    text = "Use CryptoObject",
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp)
+                )
+            }
             Button(
                 onClick = onShowBiometricPromptClick,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(top = 24.dp)
+                    .padding(top = 8.dp)
             ) {
                 Text("Show Biometric Prompt")
             }
@@ -291,6 +359,8 @@ fun BiometricClassDisplayScreenPreview() {
                     ),
                 ),
             ),
+            useCryptoObjectChecked = false,
+            onUseCryptoObjectCheckedChange = {},
             onShowBiometricPromptClick = {},
             modifier = Modifier.fillMaxSize())
     }
