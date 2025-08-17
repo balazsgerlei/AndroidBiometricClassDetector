@@ -79,7 +79,6 @@ class MainViewModel: ViewModel() {
     }
 
     fun showSecureBiometricPrompt() {
-        generateKey()
         val cipher = createCipher()
         if (cipher != null && initCipher(cipher)) {
             BiometricPrompt.CryptoObject(cipher).let {
@@ -202,6 +201,8 @@ class MainViewModel: ViewModel() {
             generateKey()
         }
 
+    private fun getSecretKey() = keystore?.getKey(SAMPLE_AES_KEY_ALIAS, null)
+
     private fun createCipher(): Cipher? {
         try {
             return Cipher.getInstance(KeyProperties.KEY_ALGORITHM_AES + "/"
@@ -216,7 +217,7 @@ class MainViewModel: ViewModel() {
 
     private fun initCipher(cipher: Cipher): Boolean {
         try {
-            val secretKey = keystore?.getKey(SAMPLE_AES_KEY_ALIAS, null) ?: return false
+            val secretKey = getSecretKey() ?: generateKey()
             cipher.init(Cipher.ENCRYPT_MODE, secretKey)
             return true
         } catch (_: KeyPermanentlyInvalidatedException) {
