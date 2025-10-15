@@ -33,8 +33,11 @@ private const val SAMPLE_AES_KEY_ALIAS = "sample_aes_key"
 class MainViewModel: ViewModel() {
 
     sealed class UiEvent {
-        data object ShowBiometricPrompt: UiEvent()
+        data class ShowBiometricPrompt(
+            val useDeviceCredential: Boolean,
+        ): UiEvent()
         data class ShowSecureBiometricPrompt(
+            val useDeviceCredential: Boolean,
             val cryptoObject: BiometricPrompt.CryptoObject
         ): UiEvent()
         data object FailedToShowBiometricPrompt: UiEvent()
@@ -73,19 +76,19 @@ class MainViewModel: ViewModel() {
         }
     }
 
-    fun showBiometricPrompt() = viewModelScope.launch {
+    fun showBiometricPrompt(useDeviceCredential: Boolean) = viewModelScope.launch {
         cryptoObject = null
-        _eventChannel.send(UiEvent.ShowBiometricPrompt)
+        _eventChannel.send(UiEvent.ShowBiometricPrompt(useDeviceCredential))
     }
 
-    fun showSecureBiometricPrompt() {
+    fun showSecureBiometricPrompt(useDeviceCredential: Boolean) {
         val cipher = createCipher()
         if (cipher != null && initCipher(cipher)) {
             BiometricPrompt.CryptoObject(cipher).let {
                 cryptoObject = it
                 viewModelScope.launch {
                     _eventChannel.send(
-                        UiEvent.ShowSecureBiometricPrompt(cryptoObject = it)
+                        UiEvent.ShowSecureBiometricPrompt(useDeviceCredential, cryptoObject = it)
                     )
                 }
             }
@@ -139,6 +142,9 @@ class MainViewModel: ViewModel() {
         }
         if (fingerprintSensorAvailable(packageManager)) {
             availableBiometricTypes.add(BiometricType.FINGERPRINT)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            availableBiometricTypes.add(BiometricType.DEVICE_CREDENTIAL)
         }
 
         when (val result = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)) {

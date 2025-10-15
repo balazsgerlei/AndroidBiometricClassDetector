@@ -1,7 +1,7 @@
 package com.example.biometricclassdetector
 
 enum class BiometricType {
-    FINGERPRINT, FACE, IRIS
+    FINGERPRINT, FACE, IRIS, DEVICE_CREDENTIAL
 }
 
 enum class BiometricClass {
