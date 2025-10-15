@@ -9,14 +9,14 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -95,7 +96,6 @@ class MainActivity : AppCompatActivity() {
                             viewModel.showBiometricPrompt()
                         }
                     },
-                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
@@ -155,58 +155,45 @@ class MainActivity : AppCompatActivity() {
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BiometricClassDisplayScreen(
     deviceInfoState: DeviceInfo,
     biometricPropertiesState: BiometricProperties?,
     useCryptoObjectChecked: Boolean,
     onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
-    onShowBiometricPromptClick: () -> Unit,
-    modifier: Modifier = Modifier
+    onShowBiometricPromptClick: () -> Unit
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = modifier,
-        ) {
-            DeviceInfoDisplay(
-                state = deviceInfoState,
-            )
-            BiometricClassDisplay(
-                state = biometricPropertiesState,
-                useCryptoObjectChecked = useCryptoObjectChecked,
-                onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
-                onShowBiometricPromptClick = onShowBiometricPromptClick,
-                modifier = modifier.fillMaxSize(),
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = if (!deviceInfoState.deviceName.lowercase().contains(deviceInfoState.deviceBrand.lowercase())) {
+                                "${deviceInfoState.deviceBrand} ${deviceInfoState.deviceName} (${deviceInfoState.deviceModel})"
+                            } else {
+                                "${deviceInfoState.deviceName} (${deviceInfoState.deviceModel})"
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "Android ${deviceInfoState?.androidVersion} (API ${deviceInfoState?.androidApiLevel})",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                },
             )
         }
-    }
-}
-
-@Composable
-fun DeviceInfoDisplay(
-    state: DeviceInfo,
-    modifier: Modifier = Modifier
-) {
-    Column (
-        modifier = modifier
-            .padding(start = 8.dp, top = 16.dp, end = 8.dp, bottom = 8.dp)
-            .fillMaxWidth(),
-    ) {
-        Text(
-            text = "${state.deviceBrand} ${state.deviceName} (${state.deviceModel})",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .padding(vertical = 4.dp, horizontal = 8.dp)
-                .fillMaxWidth(),
-        )
-        Text(
-            text = "Android ${state.androidVersion} (API ${state.androidApiLevel})",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier
-                .padding(vertical = 4.dp, horizontal = 8.dp)
-                .fillMaxWidth(),
+    ) { innerPadding ->
+        BiometricClassDisplay(
+            state = biometricPropertiesState,
+            useCryptoObjectChecked = useCryptoObjectChecked,
+            onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
+            onShowBiometricPromptClick = onShowBiometricPromptClick,
+            modifier = Modifier.padding(innerPadding),
         )
     }
 }
@@ -300,41 +287,6 @@ fun BiometricClassesDisplay(biometricClasses: List<BiometricClassDetails>, modif
 
 @Preview(showBackground = true)
 @Composable
-fun DeviceInfoDisplayPreview() {
-    BiometricClassDetectorTheme {
-        DeviceInfoDisplay(
-            state = DeviceInfo(
-                deviceName = "Pixel 8 Pro",
-                deviceBrand = "Google",
-                deviceModel = "husky",
-                androidVersion = "14",
-                androidApiLevel = 34,
-            ),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BiometricClassesDisplayPreview() {
-    BiometricClassDetectorTheme {
-        BiometricClassesDisplay(
-            biometricClasses = listOf(
-                BiometricClassDetails(
-                    biometricClass = BiometricClass.CLASS2,
-                    enrolled = true,
-                ),
-                BiometricClassDetails(
-                    biometricClass = BiometricClass.CLASS3,
-                    enrolled = true,
-                ),
-            ),
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
 fun BiometricClassDisplayScreenPreview() {
     BiometricClassDetectorTheme {
         BiometricClassDisplayScreen(
@@ -362,6 +314,25 @@ fun BiometricClassDisplayScreenPreview() {
             useCryptoObjectChecked = false,
             onUseCryptoObjectCheckedChange = {},
             onShowBiometricPromptClick = {},
-            modifier = Modifier.fillMaxSize())
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BiometricClassesDisplayPreview() {
+    BiometricClassDetectorTheme {
+        BiometricClassesDisplay(
+            biometricClasses = listOf(
+                BiometricClassDetails(
+                    biometricClass = BiometricClass.CLASS2,
+                    enrolled = true,
+                ),
+                BiometricClassDetails(
+                    biometricClass = BiometricClass.CLASS3,
+                    enrolled = true,
+                ),
+            ),
+        )
     }
 }
