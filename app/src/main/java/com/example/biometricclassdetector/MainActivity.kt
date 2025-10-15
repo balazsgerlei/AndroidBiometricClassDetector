@@ -224,43 +224,6 @@ fun BiometricClassDisplayScreen(
 }
 
 @Composable
-fun BiometricClassDisplay(
-    state: BiometricProperties?,
-    useCryptoObjectChecked: Boolean,
-    onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
-    modifier: Modifier = Modifier
-) {
-    if (state != null) {
-        Column(
-            modifier = modifier.padding(16.dp)
-        ) {
-            DeviceSecurityDisplay(
-                isDeviceSecure = state.isDeviceSecure,
-                biometricTypes = state.availableBiometricTypes,
-                biometricClasses = state.availableBiometricClasses,
-            )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
-            ) {
-                Switch(
-                    checked = useCryptoObjectChecked,
-                    onCheckedChange = onUseCryptoObjectCheckedChange,
-                )
-                Text(
-                    text = "Use CryptoObject",
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 8.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 fun DeviceSecurityDisplay(
     isDeviceSecure: Boolean,
     biometricTypes: List<BiometricType>,
@@ -270,65 +233,147 @@ fun DeviceSecurityDisplay(
     Column(
         modifier = modifier,
     ) {
-        Row (
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(bottom = 16.dp)
-        ) {
-            val icon = if (isDeviceSecure) {
-                Icons.Default.Lock
-            } else Icons.Default.Warning
-            val iconTint = if (isDeviceSecure) {
-                Color(0xFF4CAF50)
-            } else Color(0xFFF44336)
-            val text = if (isDeviceSecure) {
-                "Secure lock (PIN, pattern or password) set"
-            } else "NO secure lock (PIN, pattern or password) set"
-            Icon(
-                icon,
-                tint = iconTint,
-                contentDescription = null,
-            )
-            Text(
-                text = text,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
-        Text(
-            text = "Available biometric types: ${biometricTypes.joinToString(separator = ", ")}",
+        SecureDeviceLockDisplay(
+            isDeviceSecure = isDeviceSecure,
             modifier = Modifier.padding(bottom = 16.dp),
         )
+        AvailableBiometricTypesDisplay(
+            biometricTypes = biometricTypes,
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
+        AvailableBiometricClassesDisplay(
+            biometricClasses = biometricClasses
+        )
+    }
+}
+
+
+@Composable
+fun BiometricClassDisplay(
+    state: BiometricProperties?,
+    useCryptoObjectChecked: Boolean,
+    onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    if (state != null) {
+        Column(
+            modifier = modifier.padding(start = 16.dp, end = 16.dp)
+        ) {
+            DeviceSecurityDisplay(
+                isDeviceSecure = state.isDeviceSecure,
+                biometricTypes = state.availableBiometricTypes,
+                biometricClasses = state.availableBiometricClasses,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            BiometricPromptOptions(
+                useCryptoObjectChecked = useCryptoObjectChecked,
+                onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
+            )
+        }
+    }
+}
+
+@Composable
+fun SecureDeviceLockDisplay(
+    isDeviceSecure: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row (
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+    ) {
+        val icon = if (isDeviceSecure) {
+            Icons.Default.Lock
+        } else Icons.Default.Warning
+        val iconTint = if (isDeviceSecure) {
+            Color(0xFF4CAF50)
+        } else Color(0xFFF44336)
+        val text = if (isDeviceSecure) {
+            "Secure lock (PIN, pattern or password) set"
+        } else "NO secure lock (PIN, pattern or password) set"
+        Icon(
+            icon,
+            tint = iconTint,
+            contentDescription = null,
+        )
+        Text(
+            text = text,
+            modifier = Modifier.padding(start = 8.dp),
+        )
+    }
+}
+
+@Composable
+fun AvailableBiometricTypesDisplay(
+    biometricTypes: List<BiometricType>,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = "Available biometric types: ${biometricTypes.joinToString(separator = ", ")}",
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun AvailableBiometricClassesDisplay(
+    biometricClasses: List<BiometricClassDetails>,
+    modifier: Modifier = Modifier,
+) {
+    Column (
+        modifier = modifier,
+    ) {
         Text(
             text = "Available biometric classes:",
             modifier = Modifier.padding(bottom = 8.dp),
         )
-        Column() {
-            biometricClasses.forEach {
-                val icon = if (it.enrolled) {
-                    Icons.Default.CheckCircle
-                } else Icons.Default.Cancel
-                val iconTint = if (isDeviceSecure) {
-                    Color(0xFF4CAF50)
-                } else Color(0xFFF44336)
-                val text = if (isDeviceSecure) {
-                    "${it.biometricClass} enrolled"
-                } else "${it.biometricClass} NOT enrolled"
-                Row (
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                ) {
-                    Icon(
-                        icon,
-                        tint = iconTint,
-                        contentDescription = null,
-                    )
-                    Text(
-                        text = text,
-                        modifier = Modifier.padding(start = 8.dp),
-                    )
-                }
+        biometricClasses.forEach {
+            val icon = if (it.enrolled) {
+                Icons.Default.CheckCircle
+            } else Icons.Default.Cancel
+            val iconTint = if (it.enrolled) {
+                Color(0xFF4CAF50)
+            } else Color(0xFFF44336)
+            val text = if (it.enrolled) {
+                "${it.biometricClass} enrolled"
+            } else "${it.biometricClass} NOT enrolled"
+            Row (
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Icon(
+                    icon,
+                    tint = iconTint,
+                    contentDescription = null,
+                )
+                Text(
+                    text = text,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
-
         }
+    }
+}
+
+@Composable
+fun BiometricPromptOptions(
+    useCryptoObjectChecked: Boolean,
+    onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Switch(
+            checked = useCryptoObjectChecked,
+            onCheckedChange = onUseCryptoObjectCheckedChange,
+        )
+        Text(
+            text = "Use CryptoObject",
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 8.dp)
+        )
     }
 }
 
