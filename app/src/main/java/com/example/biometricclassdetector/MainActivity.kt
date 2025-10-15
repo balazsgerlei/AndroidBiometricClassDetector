@@ -7,12 +7,18 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -186,13 +192,27 @@ fun BiometricClassDisplayScreen(
                     }
                 },
             )
-        }
+        },
+        bottomBar = {
+            BottomAppBar {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ExtendedFloatingActionButton(
+                        onClick = onShowBiometricPromptClick,
+                        icon = { Icon(Icons.Filled.Fingerprint, "Fingerprint icon") },
+                        text = { Text(text = "Show Biometric Prompt") },
+                        elevation = FloatingActionButtonDefaults.bottomAppBarFabElevation(),
+                    )
+                }
+            }
+        },
     ) { innerPadding ->
         BiometricClassDisplay(
             state = biometricPropertiesState,
             useCryptoObjectChecked = useCryptoObjectChecked,
             onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
-            onShowBiometricPromptClick = onShowBiometricPromptClick,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -203,7 +223,6 @@ fun BiometricClassDisplay(
     state: BiometricProperties?,
     useCryptoObjectChecked: Boolean,
     onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
-    onShowBiometricPromptClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (state != null) {
@@ -237,14 +256,6 @@ fun BiometricClassDisplay(
                         .weight(1f)
                         .padding(start = 8.dp)
                 )
-            }
-            Button(
-                onClick = onShowBiometricPromptClick,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(top = 8.dp)
-            ) {
-                Text("Show Biometric Prompt")
             }
         }
     }
