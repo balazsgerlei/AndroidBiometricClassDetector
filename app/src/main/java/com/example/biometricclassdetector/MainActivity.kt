@@ -1,5 +1,6 @@
 package com.example.biometricclassdetector
 
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -11,8 +12,13 @@ import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
@@ -38,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -289,22 +296,50 @@ fun BiometricClassDisplay(
     modifier: Modifier = Modifier,
 ) {
     if (state != null) {
-        Column(
-            modifier = modifier.padding(start = 16.dp, end = 16.dp)
-        ) {
-            DeviceSecurityDisplay(
-                isDeviceSecure = state.isDeviceSecure,
-                biometricTypes = state.availableBiometricTypes,
-                biometricClasses = state.availableBiometricClasses,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            BiometricPromptOptions(
-                useCryptoObjectChecked = useCryptoObjectChecked,
-                onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
-                biometricTypes = state.availableBiometricTypes,
-                authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
-                onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
-            )
+        val configuration = LocalConfiguration.current
+        when (configuration.orientation) {
+            Configuration.ORIENTATION_PORTRAIT -> {
+                Column(
+                    modifier = modifier
+                        .padding(start = 16.dp, end = 16.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    DeviceSecurityDisplay(
+                        isDeviceSecure = state.isDeviceSecure,
+                        biometricTypes = state.availableBiometricTypes,
+                        biometricClasses = state.availableBiometricClasses,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    BiometricPromptOptions(
+                        useCryptoObjectChecked = useCryptoObjectChecked,
+                        onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
+                        biometricTypes = state.availableBiometricTypes,
+                        authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
+                        onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
+                    )
+                }
+            }
+            else -> { // Configuration.ORIENTATION_LANDSCAPE
+                Row(
+                    modifier = modifier.padding(start = 16.dp, end = 16.dp)
+                ) {
+                    DeviceSecurityDisplay(
+                        isDeviceSecure = state.isDeviceSecure,
+                        biometricTypes = state.availableBiometricTypes,
+                        biometricClasses = state.availableBiometricClasses,
+                        modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    BiometricPromptOptions(
+                        useCryptoObjectChecked = useCryptoObjectChecked,
+                        onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
+                        biometricTypes = state.availableBiometricTypes,
+                        authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
+                        onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
         }
     }
 }
@@ -457,6 +492,48 @@ fun BiometricClassDisplayScreenPreview() {
                     BiometricType.FACE,
                     BiometricType.DEVICE_CREDENTIAL,
                     ),
+                availableBiometricClasses = listOf(
+                    BiometricClassDetails(
+                        biometricClass = BiometricClass.CLASS2,
+                        enrolled = true,
+                    ),
+                    BiometricClassDetails(
+                        biometricClass = BiometricClass.CLASS3,
+                        enrolled = true
+                    ),
+                ),
+            ),
+            useCryptoObjectChecked = false,
+            onUseCryptoObjectCheckedChange = {},
+            authenticateWithDeviceCredentialChecked = false,
+            onAuthenticateWithDeviceCredentialCheckedChange = {},
+            onShowBiometricPromptClick = {},
+        )
+    }
+}
+
+@Preview(
+    showBackground = true,
+    device = "spec:width=411dp,height=891dp,dpi=420,isRound=false,chinSize=0dp,orientation=landscape,cutout=none,navigation=gesture"
+)
+@Composable
+fun BiometricClassDisplayScreenLandscapePreview() {
+    BiometricClassDetectorTheme {
+        BiometricClassDisplayScreen(
+            deviceInfoState = DeviceInfo(
+                deviceName = "Pixel 8 Pro",
+                deviceBrand = "Google",
+                deviceModel = "husky",
+                androidVersion = "14",
+                androidApiLevel = 34,
+            ),
+            biometricPropertiesState = BiometricProperties(
+                isDeviceSecure = true,
+                availableBiometricTypes = listOf(
+                    BiometricType.FINGERPRINT,
+                    BiometricType.FACE,
+                    BiometricType.DEVICE_CREDENTIAL,
+                ),
                 availableBiometricClasses = listOf(
                     BiometricClassDetails(
                         biometricClass = BiometricClass.CLASS2,
