@@ -1,5 +1,6 @@
 package com.example.biometricclassdetector
 
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.setContent
@@ -58,10 +59,10 @@ class MainActivity : AppCompatActivity() {
                     viewModel.eventChannel.collect { event ->
                         when(event) {
                             is MainViewModel.UiEvent.ShowBiometricPrompt -> {
-                                showBiometricPrompt()
+                                showBiometricPrompt(event.useDeviceCredential)
                             }
                             is MainViewModel.UiEvent.ShowSecureBiometricPrompt -> {
-                                showSecureBiometricPrompt(event.cryptoObject)
+                                showSecureBiometricPrompt(event.useDeviceCredential, event.cryptoObject)
                             }
                             is MainViewModel.UiEvent.FailedToShowBiometricPrompt -> {
                                 Toast.makeText(this@MainActivity,
@@ -92,6 +93,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 var useCryptoObjectChecked by remember { mutableStateOf(false) }
+                var authenticateWithDeviceCredentialChecked by remember { mutableStateOf(false) }
 
                 BiometricClassDisplayScreen(
                     deviceInfoState = deviceInfoState,
@@ -100,11 +102,19 @@ class MainActivity : AppCompatActivity() {
                     onUseCryptoObjectCheckedChange = {
                         useCryptoObjectChecked = it
                     },
+                    authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
+                    onAuthenticateWithDeviceCredentialCheckedChange = {
+                        authenticateWithDeviceCredentialChecked = it
+                    },
                     onShowBiometricPromptClick = {
                         if (useCryptoObjectChecked) {
-                            viewModel.showSecureBiometricPrompt()
+                            viewModel.showSecureBiometricPrompt(
+                                useDeviceCredential = authenticateWithDeviceCredentialChecked
+                            )
                         } else {
-                            viewModel.showBiometricPrompt()
+                            viewModel.showBiometricPrompt(
+                                useDeviceCredential = authenticateWithDeviceCredentialChecked
+                            )
                         }
                     },
                 )
@@ -144,23 +154,40 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun createPromptInfo(allowedAuthenticators: Int) = BiometricPrompt.PromptInfo.Builder()
-            .setTitle("Biometric login for my app")
-            .setSubtitle("Log in using your biometric credential")
-            .setAllowedAuthenticators(allowedAuthenticators)
-            .setNegativeButtonText("Cancel")
-            .build()
+        .setTitle("Biometric login for my app")
+        .setSubtitle("Log in using your biometric credential")
+        .setAllowedAuthenticators(allowedAuthenticators)
+        .apply {
+            if ((allowedAuthenticators and BiometricManager.Authenticators.DEVICE_CREDENTIAL) != BiometricManager.Authenticators.DEVICE_CREDENTIAL) {
+                setNegativeButtonText("Cancel")
+            }
+        }
+        .build()
 
-    private fun showBiometricPrompt() {
+    private fun showBiometricPrompt(useDeviceCredential: Boolean) {
         val biometricPrompt = createBiometricPrompt()
+        val allowedAuthenticators = if (useDeviceCredential) {
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        } else {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+        }
         val promptInfo =
-            createPromptInfo(BiometricManager.Authenticators.BIOMETRIC_STRONG
-                    or BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            createPromptInfo(allowedAuthenticators)
         biometricPrompt.authenticate(promptInfo)
     }
 
-    private fun showSecureBiometricPrompt(cryptoObject: BiometricPrompt.CryptoObject) {
+    private fun showSecureBiometricPrompt(useDeviceCredential: Boolean, cryptoObject: BiometricPrompt.CryptoObject) {
         val biometricPrompt = createBiometricPrompt()
-        val promptInfo = createPromptInfo(BiometricManager.Authenticators.BIOMETRIC_STRONG)
+        val allowedAuthenticators = if (useDeviceCredential) {
+            BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        } else {
+            BiometricManager.Authenticators.BIOMETRIC_STRONG
+        }
+        val promptInfo = createPromptInfo(allowedAuthenticators)
         biometricPrompt.authenticate(promptInfo, cryptoObject)
     }
 
@@ -173,6 +200,8 @@ fun BiometricClassDisplayScreen(
     biometricPropertiesState: BiometricProperties?,
     useCryptoObjectChecked: Boolean,
     onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
+    authenticateWithDeviceCredentialChecked: Boolean,
+    onAuthenticateWithDeviceCredentialCheckedChange: ((Boolean) -> Unit)?,
     onShowBiometricPromptClick: () -> Unit
 ) {
     Scaffold(
@@ -218,6 +247,8 @@ fun BiometricClassDisplayScreen(
             state = biometricPropertiesState,
             useCryptoObjectChecked = useCryptoObjectChecked,
             onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
+            authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
+            onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -253,6 +284,8 @@ fun BiometricClassDisplay(
     state: BiometricProperties?,
     useCryptoObjectChecked: Boolean,
     onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
+    authenticateWithDeviceCredentialChecked: Boolean,
+    onAuthenticateWithDeviceCredentialCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     if (state != null) {
@@ -268,6 +301,9 @@ fun BiometricClassDisplay(
             BiometricPromptOptions(
                 useCryptoObjectChecked = useCryptoObjectChecked,
                 onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
+                biometricTypes = state.availableBiometricTypes,
+                authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
+                onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
             )
         }
     }
@@ -358,23 +394,48 @@ fun AvailableBiometricClassesDisplay(
 fun BiometricPromptOptions(
     useCryptoObjectChecked: Boolean,
     onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
+    biometricTypes: List<BiometricType>,
+    authenticateWithDeviceCredentialChecked: Boolean,
+    onAuthenticateWithDeviceCredentialCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.fillMaxWidth()
+    Column(
+        modifier = modifier,
     ) {
-        Switch(
-            checked = useCryptoObjectChecked,
-            onCheckedChange = onUseCryptoObjectCheckedChange,
-        )
-        Text(
-            text = "Use CryptoObject",
-            modifier = Modifier
-                .weight(1f)
-                .padding(start = 8.dp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Switch(
+                checked = useCryptoObjectChecked,
+                onCheckedChange = onUseCryptoObjectCheckedChange,
+            )
+            Text(
+                text = "Use CryptoObject",
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 8.dp)
+            )
+        }
+        if (biometricTypes.contains(BiometricType.DEVICE_CREDENTIAL)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Switch(
+                    checked = authenticateWithDeviceCredentialChecked,
+                    onCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
+                )
+                Text(
+                    text = "Authenticate with Device Credential",
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 8.dp)
+                )
+            }
+        }
     }
+
 }
 
 @Preview(showBackground = true)
@@ -391,7 +452,11 @@ fun BiometricClassDisplayScreenPreview() {
             ),
             biometricPropertiesState = BiometricProperties(
                 isDeviceSecure = true,
-                availableBiometricTypes = listOf(BiometricType.FINGERPRINT, BiometricType.FACE),
+                availableBiometricTypes = listOf(
+                    BiometricType.FINGERPRINT,
+                    BiometricType.FACE,
+                    BiometricType.DEVICE_CREDENTIAL,
+                    ),
                 availableBiometricClasses = listOf(
                     BiometricClassDetails(
                         biometricClass = BiometricClass.CLASS2,
@@ -405,6 +470,8 @@ fun BiometricClassDisplayScreenPreview() {
             ),
             useCryptoObjectChecked = false,
             onUseCryptoObjectCheckedChange = {},
+            authenticateWithDeviceCredentialChecked = false,
+            onAuthenticateWithDeviceCredentialCheckedChange = {},
             onShowBiometricPromptClick = {},
         )
     }
@@ -418,7 +485,8 @@ fun DeviceSecurityDisplayPreview() {
             isDeviceSecure = true,
             biometricTypes = listOf(
                 BiometricType.FINGERPRINT,
-                BiometricType.FACE
+                BiometricType.FACE,
+                BiometricType.DEVICE_CREDENTIAL,
             ),
             biometricClasses = listOf(
                 BiometricClassDetails(
@@ -430,6 +498,24 @@ fun DeviceSecurityDisplayPreview() {
                     enrolled = true,
                 ),
             ),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun BiometricPromptOptionsPreview() {
+    BiometricClassDetectorTheme {
+        BiometricPromptOptions(
+            useCryptoObjectChecked = false,
+            onUseCryptoObjectCheckedChange = {},
+            biometricTypes = listOf(
+                BiometricType.FINGERPRINT,
+                BiometricType.FACE,
+                BiometricType.DEVICE_CREDENTIAL,
+            ),
+            authenticateWithDeviceCredentialChecked = false,
+            onAuthenticateWithDeviceCredentialCheckedChange = {},
         )
     }
 }
