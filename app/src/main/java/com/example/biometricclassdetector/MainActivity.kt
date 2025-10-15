@@ -13,7 +13,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Fingerprint
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -32,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -229,15 +234,9 @@ fun BiometricClassDisplay(
         Column(
             modifier = modifier.padding(16.dp)
         ) {
-            DeviceSecureDisplay(
+            DeviceSecurityDisplay(
                 isDeviceSecure = state.isDeviceSecure,
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
-            BiometricTypesDisplay(
-                biometricTypes = state.availableBiometricTypes.joinToString(separator = ", "),
-                modifier = Modifier.padding(bottom = 16.dp),
-            )
-            BiometricClassesDisplay(
+                biometricTypes = state.availableBiometricTypes,
                 biometricClasses = state.availableBiometricClasses,
             )
             Row(
@@ -262,34 +261,71 @@ fun BiometricClassDisplay(
 }
 
 @Composable
-fun DeviceSecureDisplay(isDeviceSecure: Boolean, modifier: Modifier = Modifier) {
-    Text(
-        text = "Device is protected with a PIN, pattern or password: $isDeviceSecure",
-        modifier = modifier
-    )
-}
-
-@Composable
-fun BiometricTypesDisplay(biometricTypes: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Available biometric types: $biometricTypes",
-        modifier = modifier
-    )
-}
-
-@Composable
-fun BiometricClassesDisplay(biometricClasses: List<BiometricClassDetails>, modifier: Modifier = Modifier) {
-    Column() {
+fun DeviceSecurityDisplay(
+    isDeviceSecure: Boolean,
+    biometricTypes: List<BiometricType>,
+    biometricClasses: List<BiometricClassDetails>,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+    ) {
+        Row (
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            val icon = if (isDeviceSecure) {
+                Icons.Default.Lock
+            } else Icons.Default.Warning
+            val iconTint = if (isDeviceSecure) {
+                Color(0xFF4CAF50)
+            } else Color(0xFFF44336)
+            val text = if (isDeviceSecure) {
+                "Secure lock (PIN, pattern or password) set"
+            } else "NO secure lock (PIN, pattern or password) set"
+            Icon(
+                icon,
+                tint = iconTint,
+                contentDescription = null,
+            )
+            Text(
+                text = text,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
+        Text(
+            text = "Available biometric types: ${biometricTypes.joinToString(separator = ", ")}",
+            modifier = Modifier.padding(bottom = 16.dp),
+        )
         Text(
             text = "Available biometric classes:",
             modifier = Modifier.padding(bottom = 8.dp),
         )
         Column() {
             biometricClasses.forEach {
-                Text(
-                    text = "${it.biometricClass}, enrolled: ${it.enrolled}",
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                val icon = if (it.enrolled) {
+                    Icons.Default.CheckCircle
+                } else Icons.Default.Cancel
+                val iconTint = if (isDeviceSecure) {
+                    Color(0xFF4CAF50)
+                } else Color(0xFFF44336)
+                val text = if (isDeviceSecure) {
+                    "${it.biometricClass} enrolled"
+                } else "${it.biometricClass} NOT enrolled"
+                Row (
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    Icon(
+                        icon,
+                        tint = iconTint,
+                        contentDescription = null,
+                    )
+                    Text(
+                        text = text,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
 
         }
@@ -331,9 +367,14 @@ fun BiometricClassDisplayScreenPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun BiometricClassesDisplayPreview() {
+fun DeviceSecurityDisplayPreview() {
     BiometricClassDetectorTheme {
-        BiometricClassesDisplay(
+        DeviceSecurityDisplay(
+            isDeviceSecure = true,
+            biometricTypes = listOf(
+                BiometricType.FINGERPRINT,
+                BiometricType.FACE
+            ),
             biometricClasses = listOf(
                 BiometricClassDetails(
                     biometricClass = BiometricClass.CLASS2,
