@@ -31,6 +31,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -225,11 +226,13 @@ fun BiometricClassDisplayScreen(
                                 "${deviceInfoState.deviceName} (${deviceInfoState.deviceModel})"
                             },
                             maxLines = 1,
+                            style = MaterialTheme.typography.titleLarge,
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             text = "Android ${deviceInfoState?.androidVersion} (API ${deviceInfoState?.androidApiLevel})",
                             maxLines = 1,
+                            style = MaterialTheme.typography.titleMedium,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
@@ -303,7 +306,7 @@ fun BiometricClassDisplay(
             Configuration.ORIENTATION_PORTRAIT -> {
                 Column(
                     modifier = modifier
-                        .padding(start = 16.dp, end = 16.dp)
+                        .padding(start = 16.dp, top = 8.dp, end = 16.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
                     DeviceSecurityDisplay(
