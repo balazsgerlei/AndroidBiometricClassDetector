@@ -230,7 +230,11 @@ fun BiometricClassDisplayScreen(
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            text = "Android ${deviceInfoState?.androidVersion} (API ${deviceInfoState?.androidApiLevel})",
+                            text = if (deviceInfoState.androidVariantName != null) {
+                                "Android ${deviceInfoState.androidVersion} (API ${deviceInfoState.androidApiLevel}) - ${deviceInfoState.androidVariantName}"
+                            } else {
+                                "Android ${deviceInfoState.androidVersion} (API ${deviceInfoState.androidApiLevel})"
+                            },
                             maxLines = 1,
                             style = MaterialTheme.typography.titleMedium,
                             overflow = TextOverflow.Ellipsis,
