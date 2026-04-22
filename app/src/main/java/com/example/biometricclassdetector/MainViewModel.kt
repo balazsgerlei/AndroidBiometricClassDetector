@@ -127,6 +127,14 @@ class MainViewModel: ViewModel() {
         _eventChannel.send(UiEvent.AuthenticationFailed)
     }
 
+    fun checkForGrapheneOs(context: Context) {
+        if (GrapheneOsHelper.isGrapheneOs(context)) {
+            _deviceInfo.value = _deviceInfo.value.copy(
+                androidVariantName = "GrapheneOS"
+            )
+        }
+    }
+
     fun retrieveBiometricProperties(context: Context) {
         val packageManager = context.packageManager
         val biometricManager = BiometricManager.from(context)
