@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace 'com.example.biometricclassdetector'
+    namespace 'dev.gerlot.biometricclasses'
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.biometricclassdetector"
+        applicationId "dev.gerlot.biometricclasses"
         minSdk 23
         targetSdk 35
         versionCode 1

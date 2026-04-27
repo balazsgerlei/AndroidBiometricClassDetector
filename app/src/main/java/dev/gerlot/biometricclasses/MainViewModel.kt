@@ -1,4 +1,4 @@
-package com.example.biometricclassdetector
+package dev.gerlot.biometricclasses
 
 import android.app.KeyguardManager
 import android.content.Context

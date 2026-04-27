@@ -1,4 +1,4 @@
-package com.example.biometricclassdetector.ui.theme
+package dev.gerlot.biometricclasses.ui.theme
 
 import android.app.Activity
 import android.os.Build
