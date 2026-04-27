@@ -1,4 +1,4 @@
-package com.example.biometricclassdetector
+package dev.gerlot.biometricclasses
 
 import android.content.res.Configuration
 import android.os.Build
@@ -51,11 +51,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import com.example.biometricclassdetector.ui.theme.BiometricClassDetectorTheme
+import dev.gerlot.biometricclasses.ui.theme.BiometricClassDetectorTheme
 
 class MainActivity : AppCompatActivity() {
 
-    private val viewModel: MainViewModel by viewModels()
+    private val viewModel: dev.gerlot.biometricclasses.MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
@@ -67,35 +67,51 @@ class MainActivity : AppCompatActivity() {
 
                 LaunchedEffect(Unit) {
                     viewModel.eventChannel.collect { event ->
-                        when(event) {
+                        when (event) {
                             is MainViewModel.UiEvent.ShowBiometricPrompt -> {
                                 showBiometricPrompt(event.useDeviceCredential)
                             }
+
                             is MainViewModel.UiEvent.ShowSecureBiometricPrompt -> {
-                                showSecureBiometricPrompt(event.useDeviceCredential, event.cryptoObject)
+                                showSecureBiometricPrompt(
+                                    event.useDeviceCredential,
+                                    event.cryptoObject
+                                )
                             }
+
                             is MainViewModel.UiEvent.FailedToShowBiometricPrompt -> {
-                                Toast.makeText(this@MainActivity,
+                                Toast.makeText(
+                                    this@MainActivity,
                                     "Could not show the Biometric Prompt",
-                                    Toast.LENGTH_SHORT)
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             }
+
                             is MainViewModel.UiEvent.AuthenticationError -> {
-                                Toast.makeText(this@MainActivity,
+                                Toast.makeText(
+                                    this@MainActivity,
                                     "Authentication error: ${event.errorString}",
-                                    Toast.LENGTH_SHORT)
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             }
+
                             is MainViewModel.UiEvent.AuthenticationSucceeded -> {
-                                Toast.makeText(this@MainActivity,
+                                Toast.makeText(
+                                    this@MainActivity,
                                     "Authentication succeeded!",
-                                    Toast.LENGTH_SHORT)
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             }
+
                             is MainViewModel.UiEvent.AuthenticationFailed -> {
-                                Toast.makeText(this@MainActivity,
+                                Toast.makeText(
+                                    this@MainActivity,
                                     "Authentication failed",
-                                    Toast.LENGTH_SHORT)
+                                    Toast.LENGTH_SHORT
+                                )
                                     .show()
                             }
                         }

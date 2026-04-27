@@ -1,4 +1,4 @@
-package com.example.biometricclassdetector
+package dev.gerlot.biometricclasses
 
 import android.annotation.SuppressLint
 import android.os.Build

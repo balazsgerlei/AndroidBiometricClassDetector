@@ -1,4 +1,4 @@
-package com.example.biometricclassdetector
+package dev.gerlot.biometricclasses
 
 data class DeviceInfo(
     val deviceName: String,
