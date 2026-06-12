@@ -304,7 +304,7 @@ fun DeviceSecurityDisplay(
             isDeviceSecure = isDeviceSecure,
             modifier = Modifier.padding(bottom = 16.dp),
         )
-        AvailableBiometricTypesDisplay(
+        SupportedBiometricTypesDisplay(
             biometricTypes = biometricTypes,
             modifier = Modifier.padding(bottom = 16.dp),
         )
@@ -335,14 +335,14 @@ fun BiometricClassDisplay(
                 ) {
                     DeviceSecurityDisplay(
                         isDeviceSecure = state.isDeviceSecure,
-                        biometricTypes = state.availableBiometricTypes,
+                        biometricTypes = state.supportedBiometricTypes,
                         biometricClasses = state.availableBiometricClasses,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     BiometricPromptOptions(
                         useCryptoObjectChecked = useCryptoObjectChecked,
                         onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
-                        biometricTypes = state.availableBiometricTypes,
+                        biometricTypes = state.supportedBiometricTypes,
                         authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
                         onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
                     )
@@ -354,7 +354,7 @@ fun BiometricClassDisplay(
                 ) {
                     DeviceSecurityDisplay(
                         isDeviceSecure = state.isDeviceSecure,
-                        biometricTypes = state.availableBiometricTypes,
+                        biometricTypes = state.supportedBiometricTypes,
                         biometricClasses = state.availableBiometricClasses,
                         modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
                     )
@@ -362,7 +362,7 @@ fun BiometricClassDisplay(
                     BiometricPromptOptions(
                         useCryptoObjectChecked = useCryptoObjectChecked,
                         onUseCryptoObjectCheckedChange = onUseCryptoObjectCheckedChange,
-                        biometricTypes = state.availableBiometricTypes,
+                        biometricTypes = state.supportedBiometricTypes,
                         authenticateWithDeviceCredentialChecked = authenticateWithDeviceCredentialChecked,
                         onAuthenticateWithDeviceCredentialCheckedChange = onAuthenticateWithDeviceCredentialCheckedChange,
                         modifier = Modifier.weight(1f)
@@ -404,12 +404,12 @@ fun SecureDeviceLockDisplay(
 }
 
 @Composable
-fun AvailableBiometricTypesDisplay(
+fun SupportedBiometricTypesDisplay(
     biometricTypes: List<BiometricType>,
     modifier: Modifier = Modifier,
 ) {
     Text(
-        text = "Available biometric types: ${biometricTypes.joinToString(separator = ", ")}",
+        text = "Supported biometric types: ${biometricTypes.joinToString(separator = ", ")}",
         modifier = modifier,
     )
 }
@@ -434,8 +434,8 @@ fun AvailableBiometricClassesDisplay(
                 Color(0xFF4CAF50)
             } else Color(0xFFF44336)
             val text = if (it.enrolled) {
-                "${it.biometricClass} enrolled"
-            } else "${it.biometricClass} NOT enrolled"
+                "${it.biometricClass.displayName} enrolled"
+            } else "${it.biometricClass.displayName} NOT enrolled"
             Row (
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -516,7 +516,7 @@ fun BiometricClassDisplayScreenPreview() {
             ),
             biometricPropertiesState = BiometricProperties(
                 isDeviceSecure = true,
-                availableBiometricTypes = listOf(
+                supportedBiometricTypes = listOf(
                     BiometricType.FINGERPRINT,
                     BiometricType.FACE,
                     BiometricType.DEVICE_CREDENTIAL,
@@ -558,7 +558,7 @@ fun BiometricClassDisplayScreenLandscapePreview() {
             ),
             biometricPropertiesState = BiometricProperties(
                 isDeviceSecure = true,
-                availableBiometricTypes = listOf(
+                supportedBiometricTypes = listOf(
                     BiometricType.FINGERPRINT,
                     BiometricType.FACE,
                     BiometricType.DEVICE_CREDENTIAL,

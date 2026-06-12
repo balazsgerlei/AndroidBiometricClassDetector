@@ -140,20 +140,20 @@ class MainViewModel: ViewModel() {
         val biometricManager = BiometricManager.from(context)
         val keyGuardManager: KeyguardManager = context.getSystemService(KEYGUARD_SERVICE) as KeyguardManager
 
-        val availableBiometricTypes = ArrayList<BiometricType>()
+        val supportedBiometricTypes = ArrayList<BiometricType>()
         val availableBiometricClasses = ArrayList<BiometricClassDetails>()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && faceSensorAvailable(packageManager)) {
-            availableBiometricTypes.add(BiometricType.FACE)
+            supportedBiometricTypes.add(BiometricType.FACE)
         }
         if (irisSensorAvailable(packageManager)) {
-            availableBiometricTypes.add(BiometricType.IRIS)
+            supportedBiometricTypes.add(BiometricType.IRIS)
         }
         if (fingerprintSensorAvailable(packageManager)) {
-            availableBiometricTypes.add(BiometricType.FINGERPRINT)
+            supportedBiometricTypes.add(BiometricType.FINGERPRINT)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            availableBiometricTypes.add(BiometricType.DEVICE_CREDENTIAL)
+            supportedBiometricTypes.add(BiometricType.DEVICE_CREDENTIAL)
         }
 
         when (val result = biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
@@ -179,7 +179,7 @@ class MainViewModel: ViewModel() {
             else -> { /* handle biometric auth not possible */ }
         }
 
-        _biometricProperties.value = BiometricProperties(keyGuardManager.isDeviceSecure, availableBiometricTypes, availableBiometricClasses)
+        _biometricProperties.value = BiometricProperties(keyGuardManager.isDeviceSecure, supportedBiometricTypes, availableBiometricClasses)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
