@@ -55,7 +55,7 @@ import dev.gerlot.biometricclasses.ui.theme.BiometricClassDetectorTheme
 
 class MainActivity : AppCompatActivity() {
 
-    private val viewModel: dev.gerlot.biometricclasses.MainViewModel by viewModels()
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()

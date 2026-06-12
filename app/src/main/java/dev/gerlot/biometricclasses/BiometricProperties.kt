@@ -9,12 +9,12 @@ enum class BiometricClass {
 }
 
 data class BiometricClassDetails(
-    val biometricClass: dev.gerlot.biometricclasses.BiometricClass,
+    val biometricClass: BiometricClass,
     val enrolled: Boolean,
 )
 
 data class BiometricProperties(
     val isDeviceSecure: Boolean,
-    val availableBiometricTypes:  List<dev.gerlot.biometricclasses.BiometricType>,
-    val availableBiometricClasses: List<dev.gerlot.biometricclasses.BiometricClassDetails>,
+    val supportedBiometricTypes:  List<BiometricType>,
+    val availableBiometricClasses: List<BiometricClassDetails>,
 )
