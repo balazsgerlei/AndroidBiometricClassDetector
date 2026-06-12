@@ -3,7 +3,6 @@ package dev.gerlot.biometricclasses
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -33,6 +32,8 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -64,6 +65,7 @@ class MainActivity : AppCompatActivity() {
             BiometricClassDetectorTheme {
                 val deviceInfoState by viewModel.deviceInfo.collectAsState()
                 val biometricPropertiesState by viewModel.biometricProperties.collectAsState()
+                val snackbarHostState = remember { SnackbarHostState() }
 
                 LaunchedEffect(Unit) {
                     viewModel.eventChannel.collect { event ->
@@ -80,39 +82,27 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             is MainViewModel.UiEvent.FailedToShowBiometricPrompt -> {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Could not show the Biometric Prompt",
-                                    Toast.LENGTH_SHORT
+                                snackbarHostState.showSnackbar(
+                                    "Could not show the Biometric Prompt"
                                 )
-                                    .show()
                             }
 
                             is MainViewModel.UiEvent.AuthenticationError -> {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Authentication error: ${event.errorString}",
-                                    Toast.LENGTH_SHORT
+                                snackbarHostState.showSnackbar(
+                                    "Authentication error: ${event.errorString}"
                                 )
-                                    .show()
                             }
 
                             is MainViewModel.UiEvent.AuthenticationSucceeded -> {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Authentication succeeded!",
-                                    Toast.LENGTH_SHORT
+                                snackbarHostState.showSnackbar(
+                                    "Authentication succeeded!"
                                 )
-                                    .show()
                             }
 
                             is MainViewModel.UiEvent.AuthenticationFailed -> {
-                                Toast.makeText(
-                                    this@MainActivity,
-                                    "Authentication failed",
-                                    Toast.LENGTH_SHORT
+                                snackbarHostState.showSnackbar(
+                                    "Authentication failed"
                                 )
-                                    .show()
                             }
                         }
                     }
@@ -124,6 +114,7 @@ class MainActivity : AppCompatActivity() {
                 BiometricClassDisplayScreen(
                     deviceInfoState = deviceInfoState,
                     biometricPropertiesState = biometricPropertiesState,
+                    snackbarHostState = snackbarHostState,
                     useCryptoObjectChecked = useCryptoObjectChecked,
                     onUseCryptoObjectCheckedChange = {
                         useCryptoObjectChecked = it
@@ -228,6 +219,7 @@ class MainActivity : AppCompatActivity() {
 fun BiometricClassDisplayScreen(
     deviceInfoState: DeviceInfo,
     biometricPropertiesState: BiometricProperties?,
+    snackbarHostState: SnackbarHostState,
     useCryptoObjectChecked: Boolean,
     onUseCryptoObjectCheckedChange: ((Boolean) -> Unit)?,
     authenticateWithDeviceCredentialChecked: Boolean,
@@ -277,6 +269,9 @@ fun BiometricClassDisplayScreen(
                     )
                 }
             }
+        },
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState)
         },
     ) { innerPadding ->
         BiometricClassDisplay(
@@ -532,6 +527,7 @@ fun BiometricClassDisplayScreenPreview() {
                     ),
                 ),
             ),
+            snackbarHostState = SnackbarHostState(),
             useCryptoObjectChecked = false,
             onUseCryptoObjectCheckedChange = {},
             authenticateWithDeviceCredentialChecked = false,
@@ -574,6 +570,7 @@ fun BiometricClassDisplayScreenLandscapePreview() {
                     ),
                 ),
             ),
+            snackbarHostState = SnackbarHostState(),
             useCryptoObjectChecked = false,
             onUseCryptoObjectCheckedChange = {},
             authenticateWithDeviceCredentialChecked = false,
