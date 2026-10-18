@@ -186,7 +186,7 @@ class MainViewModel: ViewModel() {
     private fun faceSensorAvailable(packageManager: PackageManager): Boolean = packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)
 
     private fun irisSensorAvailable(packageManager: PackageManager): Boolean {
-        if (packageManager.hasSystemFeature(PackageManager.FEATURE_FACE)) {
+        if (packageManager.hasSystemFeature(PackageManager.FEATURE_IRIS)) {
             return true
         } else {
             try {
